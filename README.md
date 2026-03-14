@@ -1,46 +1,52 @@
-# 📞 FastAPI + Twilio Voice Automation API
+# 🌦️ AI WhatsApp Weather Assistant  
+### FastAPI + Twilio + Groq LLM + Weather APIs
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
-![Twilio](https://img.shields.io/badge/Twilio-Voice-red)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![Twilio](https://img.shields.io/badge/Twilio-WhatsApp-red)
+![Groq](https://img.shields.io/badge/Groq-LLM-purple)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-A simple **Voice Automation API** built using **FastAPI and Twilio**.  
-This application receives **incoming phone calls** via Twilio and responds with automated voice instructions using **TwiML**.
+An **AI-powered WhatsApp Weather Assistant** built using **FastAPI, Twilio, Groq LLM, and Weather APIs**.
 
-The project uses **ngrok** to expose the local FastAPI server to the internet so that Twilio can send webhook requests.
+Users can send a message on WhatsApp asking about weather conditions, and the system intelligently responds with weather insights and suggestions.
 
 ---
 
 # 🚀 Features
 
-✅ Handle incoming calls using Twilio  
-✅ Generate automated voice responses using TwiML  
-✅ Webhook handling with FastAPI  
-✅ Local development with ngrok  
-✅ Easy deployment to Railway / Render / AWS  
+✅ Receive WhatsApp messages via **Twilio Webhooks**  
+✅ Process user queries using **Groq LLM**  
+✅ Fetch real-time weather data using **Weather APIs**  
+✅ Automatic WhatsApp responses  
+✅ FastAPI backend architecture  
+✅ Local development using **ngrok**
 
 ---
 
 # 🏗️ Architecture
 
 ```
-User Phone Call
-       │
-       ▼
-Twilio Phone Number
-       │
-       ▼
-Twilio Webhook
-       │
-       ▼
-Public URL (ngrok / deployed server)
-       │
-       ▼
-FastAPI Application
-       │
-       ▼
-TwiML Voice Response
+User WhatsApp Message
+        │
+        ▼
+Twilio WhatsApp Sandbox
+        │
+        ▼
+Webhook Request
+        │
+        ▼
+FastAPI Backend
+        │
+        ├── Weather API (Geo / Meteo)
+        │
+        └── Groq LLM Processing
+        │
+        ▼
+AI Generated Weather Suggestion
+        │
+        ▼
+WhatsApp Response to User
 ```
 
 ---
@@ -50,9 +56,11 @@ TwiML Voice Response
 | Technology | Purpose |
 |-------------|-------------|
 | Python | Programming language |
-| FastAPI | Backend API framework |
-| Twilio | Voice communication API |
-| ngrok | Expose local server |
+| FastAPI | Backend framework |
+| Twilio | WhatsApp messaging API |
+| Groq LLM | Natural language processing |
+| Geo / Meteo APIs | Weather data |
+| ngrok | Public tunnel for local server |
 | Uvicorn | ASGI server |
 
 ---
@@ -60,9 +68,11 @@ TwiML Voice Response
 # 📂 Project Structure
 
 ```
-twilio-fastapi-voice-bot
+whatsapp-weather-ai
 │
 ├── main.py
+├── weather_service.py
+├── llm_service.py
 ├── requirements.txt
 └── README.md
 ```
@@ -74,8 +84,8 @@ twilio-fastapi-voice-bot
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/twilio-fastapi-voice-bot.git
-cd twilio-fastapi-voice-bot
+git clone https://github.com/yourusername/whatsapp-weather-ai.git
+cd whatsapp-weather-ai
 ```
 
 ---
@@ -86,15 +96,15 @@ cd twilio-fastapi-voice-bot
 python -m venv venv
 ```
 
-Activate it
+Activate environment
 
-### Mac / Linux
+Mac / Linux
 
 ```bash
 source venv/bin/activate
 ```
 
-### Windows
+Windows
 
 ```bash
 venv\Scripts\activate
@@ -114,6 +124,8 @@ Example dependencies
 fastapi
 uvicorn
 twilio
+requests
+groq
 python-multipart
 ```
 
@@ -127,7 +139,7 @@ Start the FastAPI server
 uvicorn main:app --reload
 ```
 
-Server will run on
+Server will run at
 
 ```
 http://127.0.0.1:8000
@@ -135,35 +147,33 @@ http://127.0.0.1:8000
 
 ---
 
-# 🌐 Expose Local Server with ngrok
+# 🌐 Expose Local Server
 
-Twilio requires a **public URL** to send webhook requests.
-
-Run:
+Use **ngrok** so Twilio can access your webhook.
 
 ```bash
 ngrok http 8000
 ```
 
-Example:
+Example
 
 ```
-https://1234abcd.ngrok.io
+https://abcd1234.ngrok.io
 ```
 
 ---
 
-# ☎️ Configure Twilio Webhook
+# 📲 Twilio WhatsApp Setup
 
 1. Go to **Twilio Console**
-2. Navigate to **Phone Numbers**
-3. Select your Twilio number
-4. Set **Voice Webhook**
+2. Navigate to **Messaging → WhatsApp Sandbox**
+3. Join sandbox using provided WhatsApp code
+4. Set webhook
 
-Example:
+Example
 
 ```
-https://1234abcd.ngrok.io/voice
+https://abcd1234.ngrok.io/webhook
 ```
 
 Method
@@ -172,98 +182,78 @@ Method
 POST
 ```
 
-Now whenever someone calls the Twilio number, the request will hit your **FastAPI endpoint**.
-
 ---
 
 # 📡 API Endpoint
 
-## POST `/voice`
+## POST `/webhook`
 
-Handles incoming calls and returns a TwiML voice response.
+Receives WhatsApp messages and processes weather queries.
 
-### Example Implementation
+Example:
 
 ```python
-from fastapi import FastAPI
-from fastapi.responses import Response
-from twilio.twiml.voice_response import VoiceResponse
+@app.post("/webhook")
+async def whatsapp_bot(Body: str = Form(...)):
 
-app = FastAPI()
+    weather = get_weather_data(Body)
 
-@app.post("/voice")
-async def voice():
+    suggestion = groq_llm(weather)
 
-    response = VoiceResponse()
-
-    response.say(
-        "Hello! This call is handled using FastAPI and Twilio."
-    )
-
-    return Response(
-        content=str(response),
-        media_type="application/xml"
-    )
+    return send_whatsapp_message(suggestion)
 ```
 
 ---
 
-# 🧪 Testing
+# 🧠 How It Works
 
-1️⃣ Start FastAPI server  
-2️⃣ Run ngrok  
-3️⃣ Configure Twilio webhook  
-4️⃣ Call your Twilio phone number  
-
-You should hear the automated voice message.
+1️⃣ User sends WhatsApp message (e.g. *"Weather in Delhi"*)  
+2️⃣ Twilio sends webhook request to FastAPI  
+3️⃣ Backend fetches weather data from API  
+4️⃣ Groq LLM generates human-like weather suggestion  
+5️⃣ Response is sent back via WhatsApp  
 
 ---
 
-# 🚀 Deployment
+# 🧪 Example Query
 
-You can deploy this API on:
+User message:
 
-- Railway
-- Render
-- AWS EC2
-- Docker
+```
+Weather in Delhi today
+```
 
-Once deployed, **ngrok will not be required** because the server will already have a public URL.
+Bot response:
+
+```
+The weather in Delhi today is 32°C with clear skies.
+It’s a great day for outdoor activities but stay hydrated due to the heat.
+```
 
 ---
 
 # 🔐 Environment Variables
 
-For security, store credentials using environment variables.
-
-Example:
-
 ```
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER
+TWILIO_WHATSAPP_NUMBER
+GROQ_API_KEY
+WEATHER_API_KEY
 ```
 
 ---
 
-# 📚 Learning Outcomes
+# 🚀 Future Improvements
 
-This project demonstrates:
-
-- FastAPI backend development
-- Webhook integration
-- Twilio Voice API
-- ngrok tunneling
-- Building voice automation systems
+- Multi-city weather queries
+- AI travel recommendations
+- Weather alerts
+- WhatsApp chatbot with memory
+- AI clothing suggestions based on weather
 
 ---
 
 # 📜 License
 
 MIT License
-
----
-
-# ⭐ If you found this useful
-
-Give the repository a **star ⭐ on GitHub**.
